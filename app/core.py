@@ -16,11 +16,16 @@ class Settings(BaseSettings):
     DATA_TABLE_NAME: str = "observation_data"
     PREDICTION_TABLE_NAME: str = "model_predictions"
 
-    ML_LOOKBACK_HOURS: int = 72     # ML model input.
-    DATA_RETRIEVAL_HOURS: int = 72  # Lookback for new historical data
+    ML_LOOKBACK_HOURS: int = 24     # ML model input.
+    DATA_RESOLUTION_MINUTES: int = 10
+
+    DATA_RETRIEVAL_HOURS: int = 48  # Lookback for new historical data
     BUFFER_HOURS: int = 1           # Safety buffer for fetching new data
-    DEFAULT_REQUEST_HOURS: int = 72
+    DEFAULT_REQUEST_HOURS: int = 48
     MAX_REQUEST_HOURS: int = 168
+
+    GOAS_19_XRAY_LONG: str = "https://services.swpc.noaa.gov/json/goes/secondary/xrays-3-day.json"
+
     model_config = SettingsConfigDict(env_file='.env', extra='ignore')
 
 
