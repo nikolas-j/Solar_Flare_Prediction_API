@@ -7,7 +7,7 @@ class PredictionRecord(BaseModel):
     Schema for a solar flare prediction result.
     """
     timestamp: str = Field(..., description="UTC time for what period the prediction was generated for.")
-    m_class_probability: float = Field(..., ge=0.0, le=1.0, description="Probability of an M-class solar flare occurring in the next 24 hours.")
+    m_class_probability: float = Field(..., ge=0.0, le=10.0, description="Probability of an M-class solar flare occurring in the next 24 hours.")
     risk_level: str = Field(..., description="Risk classification ('Low', 'Medium', 'High').")
     model_version: str = Field("1.0.0", description="Version of the ML model used for this prediction.")
 
@@ -16,7 +16,7 @@ class ObservationRecord(BaseModel):
     Schema for a single historical solar observation record.
     """
     timestamp: str = Field(..., description="UTC time of the observation.")
-    magnetic_flux: float = Field(..., description="Total magnetic flux of the active region.")
+    xray_flux: float = Field(..., description="Total X-ray flux observed.")
 
 class HistoricalPredictionsResponse(BaseModel):
     """
