@@ -8,7 +8,7 @@ settings = get_settings()
 # --- Pipeline Helpers ---
 async def fetch_solar_data(start_time: datetime, end_time: datetime) -> List[Dict[str,Any]]:
     """
-    Fetches solar observation data from GOAS API for the given interval.
+    Fetches solar observation data from external API for the given interval.
     Augments missing values with averages and cleans the data.
     Returns a list of clean observations.
     """
