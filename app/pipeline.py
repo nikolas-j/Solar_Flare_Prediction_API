@@ -36,8 +36,7 @@ async def predict(model: Dict[str, Any], data: List[Dict[str, Any]]) -> Dict[str
     # KEEP MOCK return statement since no model is implemented yet
     result = {
         "flare_risk": "Low",
-        "x_class_prob": 0.05,
-        "m_class_prob": 0.15,
+        "m_class_probability": 0.15,
         "risk_level": "Low",
         "model_version": "THIS IS A TEST STATEMENT"
     }
@@ -58,9 +57,14 @@ async def run_prediction_pipeline(db: Client, settings: Settings):
 
     # 1. Determine time range for new data fetch
     # NOTE: Timestamp format is isofomat UTC, In Supabase timestampz datatype.
-    start_time = await db.table(settings.DATA_TABLE_NAME).select("timestamp").order("timestamp", desc=True).limit(1).single()
-    if start_time is None or start_time < datetime.now(timezone.utc) - timedelta(hours=settings.DATA_RETRIEVAL_HOURS):
+    latest_record = db.table(settings.DATA_TABLE_NAME).select("timestamp").order("timestamp", desc=True).limit(1).execute()
+    date_str = latest_record.data[0]["timestamp"]
+    date_obj = datetime.fromisoformat(date_str).replace(tzinfo=timezone.utc)
+
+    if date_obj < (datetime.now(timezone.utc) - timedelta(hours=settings.DATA_RETRIEVAL_HOURS)):
         start_time = datetime.now(timezone.utc) - timedelta(hours=settings.DATA_RETRIEVAL_HOURS)
+    else:
+        start_time = date_obj
     start_time -= timedelta(hours=settings.BUFFER_HOURS)  # Apply buffer
     end_time = datetime.now(timezone.utc)
 
@@ -73,12 +77,12 @@ async def run_prediction_pipeline(db: Client, settings: Settings):
 
     # 3. Write new data to Supabase, makes sure no duplicates
     for record in new_data:
-        await db.table(settings.DATA_TABLE_NAME).upsert(record).execute()
+        db.table(settings.DATA_TABLE_NAME).upsert(record).execute()
     print(f"Wrote {len(new_data)} new solar observation records to Supabase.")
 
     # 4. Query db for recent data for prediction
     lookback_start_time = datetime.now(timezone.utc) - timedelta(hours=settings.ML_LOOKBACK_HOURS)
-    recent_data_response = await db.table(settings.DATA_TABLE_NAME).select("*").gte("timestamp", lookback_start_time.isoformat()).execute()
+    recent_data_response = db.table(settings.DATA_TABLE_NAME).select("*").gte("timestamp", lookback_start_time.isoformat()).execute()
     recent_data = recent_data_response.data if recent_data_response.data else []
 
     if not recent_data:
@@ -94,16 +98,16 @@ async def run_prediction_pipeline(db: Client, settings: Settings):
     print(f"Generated prediction: {prediction_result}")
 
     # 7. Write prediction result to Supabase
-    current_time = datetime.now(timezone.utc)
+    current_time = datetime.now(timezone.utc).isoformat()
     prediction_entry = {
-        "timestamp": current_time.isoformat(),
-        "m_class_prob": prediction_result.get("m_class_prob", 0.0),
+        "timestamp": current_time,
+        "m_class_probability": prediction_result.get("m_class_probability", 0.0),
         "risk_level": prediction_result.get("risk_level", "Unknown"),
         "model_version": prediction_result.get("model_version", "1.0.0")
     }
 
     # Allow duplicates
-    await db.table(settings.PREDICTION_TABLE_NAME).insert(prediction_entry).execute()
-    print(f"Wrote prediction result to Supabase at {current_time.isoformat()}.")
+    db.table(settings.PREDICTION_TABLE_NAME).insert(prediction_entry).execute()
+    print(f"Wrote prediction result to Supabase at {current_time}.")
 
     print("Prediction pipeline completed successfully.")

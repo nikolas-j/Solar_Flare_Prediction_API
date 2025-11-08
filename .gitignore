@@ -1,6 +1,7 @@
 # Git
 .git/
 
+requirements.txt
 
 # Python
 .venv/

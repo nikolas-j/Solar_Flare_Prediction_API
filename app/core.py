@@ -1,5 +1,5 @@
 from supabase import create_client, Client
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 from typing import List
 
@@ -9,8 +9,8 @@ App settings and Supabase client initialization
 
 class Settings(BaseSettings):
 
-    SUPABASE_URL: str
-    SUPABASE_KEY: str
+    SUPABASE_URL: str = "your-supabase-url"
+    SUPABASE_KEY: str = "your-supabase-key"
 
     CORS_ORIGINS: List[str] = ["http://localhost:8000"]
     DATA_TABLE_NAME: str = "observation_data"
@@ -21,9 +21,7 @@ class Settings(BaseSettings):
     BUFFER_HOURS: int = 1           # Safety buffer for fetching new data
     DEFAULT_REQUEST_HOURS: int = 72
     MAX_REQUEST_HOURS: int = 168
-
-    class Config:
-        env_file = ".env"
+    model_config = SettingsConfigDict(env_file='.env', extra='ignore')
 
 
 @lru_cache()

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from typing import Annotated
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 # No dependency injection for database, use Supabase API layer directly
 from .core import db, Settings, get_settings
@@ -23,7 +23,7 @@ Authenticated = Annotated[bool, Depends(verify_scheduler_auth)]
 
 # --- GET Endpoints ---
 # --- Predictions ---
-@api_router.get("/predictions/latest", tags=["predictions"], response_model=models.LatestPredictionResponse)
+@api_router.get("/predictions/latest", tags=["predictions"], response_model=models.PredictionRecord)
 async def get_latest_prediction():
     """
     Fetches the latest solar flare prediction.
@@ -50,13 +50,13 @@ async def get_historical_predictions(settings: Settings = Depends(get_settings),
     )
 
 # --- Observations ---
-@api_router.get("/data/latest", tags=["observations"], response_model=models.LatestObservationResponse)
+@api_router.get("/data/latest", tags=["observations"], response_model=models.ObservationRecord)
 async def get_latest_observation(settings: Settings = Depends(get_settings)):
     """
     Fetches the latest solar observation datapoint.
     """
 
-    return models.LatestObservationResponse(
+    return models.ObservationRecord(
         timestamp="2024-01-01T00:00:00Z",
         magnetic_flux=12345.67
     )
@@ -97,5 +97,5 @@ async def trigger_prediction_pipeline(_: Authenticated, settings: Settings = Dep
     return models.PipelineStatusResponse(
         status="accepted",
         message="Prediction pipeline successfully completed.",
-        pipeline_completed_at=datetime.now(timezone.utc)
+        pipeline_completed_at=datetime.now(timezone.utc).isoformat()
     )
